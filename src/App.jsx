@@ -2,13 +2,28 @@ import { useEffect, useState } from "react";
 import PokemonBanner from "./components/PokemonBanner";
 import PokemonModal from "./components/PokemonModal";
 
+const TYPES = [
+  "fire",
+  "water",
+  "grass",
+  "electric",
+  "bug",
+  "normal",
+  "poison",
+  "flying",
+];
+
 function App() {
   const [pokemons, setPokemons] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  const [search, setSearch] = useState("");
+  const [types, setTypes] = useState([]);
+
   const [selectedPokemon, setSelectedPokemon] = useState(null);
 
   useEffect(() => {
-    const loadPokemons = async () => {
+    const fetchPokemons = async () => {
       setLoading(true);
 
       try {
@@ -18,29 +33,84 @@ function App() {
 
         const data = await res.json();
 
-        const result = await Promise.all(
-          data.results.map(async (pokemon) => {
-            const res = await fetch(pokemon.url);
+        const list = await Promise.all(
+          data.results.map(async (p) => {
+            const res = await fetch(p.url);
             return res.json();
           })
         );
 
-        setPokemons(result);
-      } catch (err) {
-        console.log("erro ao carregar pokémons");
+        setPokemons(list);
+      } catch (e) {
+        console.log("error loading pokemons");
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     };
 
-    loadPokemons();
+    fetchPokemons();
   }, []);
 
+  const toggleType = (type) => {
+    setTypes((prev) => {
+      if (prev.includes(type)) {
+        return prev.filter((t) => t !== type);
+      }
+
+      if (prev.length >= 2) return prev;
+
+      return [...prev, type];
+    });
+  };
+
+  const filtered = pokemons.filter((p) => {
+    const nameMatch = p.name
+      .toLowerCase()
+      .includes(search.toLowerCase());
+
+    const typeMatch =
+      types.length === 0 ||
+      types.every((t) =>
+        p.types.some((pt) => pt.type.name === t)
+      );
+
+    return nameMatch && typeMatch;
+  });
+
   return (
-    <div style={{ textAlign: "center", padding: 20 }}>
+    <div style={{ padding: 20, textAlign: "center" }}>
       <h1>Pokédex</h1>
 
-      {loading && <p>Carregando...</p>}
+      <input
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="buscar Pokémon"
+        style={{ padding: 8, marginBottom: 10 }}
+      />
+
+      <div style={{ marginBottom: 15 }}>
+        {TYPES.map((t) => (
+          <button
+            key={t}
+            onClick={() => toggleType(t)}
+            style={{
+              margin: 4,
+              padding: "6px 10px",
+              borderRadius: 20,
+              border: types.includes(t)
+                ? "2px solid #000"
+                : "1px solid #000",
+              background: types.includes(t) ? "#ccc" : "#000",
+              cursor: "pointer",
+              textTransform: "capitalize",
+            }}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+
+      {loading && <p>loading...</p>}
 
       <div
         style={{
@@ -49,11 +119,11 @@ function App() {
           justifyContent: "center",
         }}
       >
-        {pokemons.map((pokemon) => (
+        {filtered.map((p) => (
           <PokemonBanner
-            key={pokemon.id}
-            pokemon={pokemon}
-            onClick={() => setSelectedPokemon(pokemon)}
+            key={p.id}
+            pokemon={p}
+            onClick={() => setSelectedPokemon(p)}
           />
         ))}
       </div>
