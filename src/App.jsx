@@ -1,43 +1,37 @@
 import { useEffect, useState } from "react";
+import PokemonBanner from "./components/PokemonBanner";
 
 function App() {
   const [pokemons, setPokemons] = useState([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    let active = true;
-
-    const fetchPokemons = async () => {
+    const loadPokemons = async () => {
       setLoading(true);
 
       try {
-        const response = await fetch(
+        const res = await fetch(
           "https://pokeapi.co/api/v2/pokemon?limit=151"
         );
 
-        const data = await response.json();
+        const data = await res.json();
 
         const result = await Promise.all(
-          data.results.map((p) =>
-            fetch(p.url).then((res) => res.json())
-          )
+          data.results.map(async (pokemon) => {
+            const res = await fetch(pokemon.url);
+            return res.json();
+          })
         );
 
-        if (active) {
-          setPokemons(result);
-        }
+        setPokemons(result);
       } catch (err) {
-        console.log("error fetching pokemons");
+        console.log("erro ao carregar pokémons");
       }
 
       setLoading(false);
     };
 
-    fetchPokemons();
-
-    return () => {
-      active = false;
-    };
+    loadPokemons();
   }, []);
 
   return (
@@ -54,26 +48,11 @@ function App() {
         }}
       >
         {pokemons.map((pokemon) => (
-          <div
+          <PokemonBanner
             key={pokemon.id}
-            style={{
-              width: 120,
-              margin: 10,
-              padding: 10,
-              border: "1px solid #ddd",
-              borderRadius: 10,
-              background: "#fff",
-            }}
-          >
-            <img
-              src={pokemon.sprites.front_default}
-              alt={pokemon.name}
-            />
-
-            <p style={{ textTransform: "capitalize" }}>
-              {pokemon.name}
-            </p>
-          </div>
+            pokemon={pokemon}
+            onClick={() => console.log(pokemon.name)}
+          />
         ))}
       </div>
     </div>
