@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import PokemonBanner from "./components/PokemonBanner";
+import PokemonModal from "./components/PokemonModal";
 
 function App() {
   const [pokemons, setPokemons] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [selectedPokemon, setSelectedPokemon] = useState(null);
 
   useEffect(() => {
     const loadPokemons = async () => {
@@ -51,10 +53,15 @@ function App() {
           <PokemonBanner
             key={pokemon.id}
             pokemon={pokemon}
-            onClick={() => console.log(pokemon.name)}
+            onClick={() => setSelectedPokemon(pokemon)}
           />
         ))}
       </div>
+
+      <PokemonModal
+        pokemon={selectedPokemon}
+        onClose={() => setSelectedPokemon(null)}
+      />
     </div>
   );
 }
